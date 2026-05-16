@@ -47,10 +47,14 @@ fn main() {
         let lading = serde_json::to_string(&a_drone).unwrap();
         println!("{}", distance);
         println!("{}", lading);
-        if randrange_x > 0.1 {
+        if randrange_x > 300.0 {
+            a_drone.x_axis += rng.random_range(0.1..300.0);
+        } else if randrange_x > 0.1 {
             a_drone.x_axis += rng.random_range(0.1..randrange_x);
         }
-        if randrange_y > 0.1 {
+        if randrange_y > 300.0 {
+            a_drone.y_axis += rng.random_range(0.1..300.0);
+        } else if randrange_y > 0.1 {
             a_drone.y_axis += rng.random_range(0.1..randrange_y);
         }
         a_drone.battery -= 1;
