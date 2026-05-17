@@ -1,23 +1,33 @@
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 use std::thread;
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 enum Payload {
-    medical_supplies,
-    he_shell,
-    grenade,
-    military_supplies,
+    MedicalSupplies,
+    HeShell,
+    Grenade,
+    MilitarySupplies,
 }
 #[derive(Serialize, Deserialize)]
-struct drone_data {
+struct DroneData {
     name: String,
     x_axis: f64,
     y_axis: f64,
     battery: u8,
     payload: Payload,
+}
+
+impl Payload {
+    fn weight(&self) -> f64 {
+        match self {
+            Payload::MedicalSupplies => 10.0,
+            Payload::HeShell => 0.0,
+            Payload::Grenade => 0.0,
+            Payload::MilitarySupplies => 0.0,
+        }
+    }
 }
 
 fn main() {
@@ -26,12 +36,12 @@ fn main() {
     let target_x: f64 = 3422.523;
     let target_y: f64 = 3566.1;
 
-    let mut a_drone: drone_data = drone_data {
+    let mut a_drone: DroneData = DroneData {
         name: String::from("drone_1"),
         x_axis: 0.0,
         y_axis: 0.0,
         battery: 100,
-        payload: Payload::he_shell,
+        payload: Payload::HeShell,
     };
     loop {
         let mut randrange_x = target_x - a_drone.x_axis;

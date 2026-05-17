@@ -1,1 +1,11 @@
-hehe
+# Planning on adding
+- Obstacles
+- Collision detection
+- Map
+- weather
+- weight to speed ratio
+- diff models
+- diff roles
+- base stations
+- failures
+- Communication
