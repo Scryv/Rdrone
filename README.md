@@ -1,6 +1,7 @@
 # Planning on adding
 - Obstacles
 - Collision detection
+- actual speed
 - Map
 - weather
 - weight to speed ratio
