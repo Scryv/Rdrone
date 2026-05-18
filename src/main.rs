@@ -47,6 +47,7 @@ struct DroneData {
     y_axis: f64,
     battery: f64,
     payload: Payload,
+    completed: bool,
 }
 impl Role {
     fn rolebatgo(&self) -> f64 {
@@ -79,47 +80,75 @@ fn main() {
     let target_x: f64 = 3422.523;
     let target_y: f64 = 3566.1;
 
-    let mut a_drone: DroneData = DroneData {
-        name: String::from("drone_1"),
-        role: Role::kamikaze,
-        x_axis: 0.0,
-        y_axis: 0.0,
-        battery: 100.0,
-        payload: Payload::HeShell,
-    };
-    loop {
-        let mut randrange_x = target_x - a_drone.x_axis;
-        let mut randrange_y = target_y - a_drone.y_axis;
+    let mut dro: Vec<DroneData> = vec![
+        DroneData {
+            name: String::from("drone_1"),
+            role: Role::Kamikaze,
+            x_axis: 0.0,
+            y_axis: 0.0,
+            battery: 100.0,
+            payload: Payload::HeShell,
+            completed: false,
+        },
+        DroneData {
+            name: String::from("drone_2"),
+            role: Role::Scout,
+            x_axis: 0.0,
+            y_axis: 0.0,
+            battery: 100.0,
+            payload: Payload::SignalRelay,
+            completed: false,
+        },
+    ];
 
-        let distance: f64 =
-            ((a_drone.x_axis - target_x).powf(2.0) + (a_drone.y_axis - target_y).powf(2.0)).sqrt();
+    'outer: loop {
+        let mut all_drone = true;
+        for d in &dro {
+            if !d.completed {
+                all_drone = false;
+                break;
+            }
+        }
 
-        if distance <= 0.12 {
-            println!("target been reached");
-            break;
+        for drones in &mut dro {
+            let mut randrange_x = target_x - drones.x_axis;
+            let mut randrange_y = target_y - drones.y_axis;
+
+            let distance: f64 = ((drones.x_axis - target_x).powf(2.0)
+                + (drones.y_axis - target_y).powf(2.0))
+            .sqrt();
+
+            if distance <= 0.12 {
+                println!("Drone: {} has reached target", drones.name);
+                drones.completed = true;
+            }
+            let lading = serde_json::to_string(&drones).unwrap();
+            println!("{}", distance);
+            println!("{}", lading);
+            if randrange_x > 300.0 {
+                drones.x_axis += rng.random_range(0.1..300.0);
+            } else if randrange_x > 0.1 {
+                drones.x_axis += rng.random_range(0.1..randrange_x);
+            }
+            if randrange_y > 300.0 {
+                drones.y_axis += rng.random_range(0.1..300.0);
+            } else if randrange_y > 0.1 {
+                drones.y_axis += rng.random_range(0.1..randrange_y);
+            }
+            drones.battery -= drones.role.rolebatgo() + drones.payload.battery_multiplier();
+            if drones.battery == 50.0 {
+                println!("Drone battery has halfway drained!");
+            } else if drones.battery == 25.0 {
+                println!("25 procent remaining please recharge or hit target!")
+            } else if drones.battery <= 0.0 {
+                println!("Drone battery has died");
+                break;
+            }
         }
-        let lading = serde_json::to_string(&a_drone).unwrap();
-        println!("{}", distance);
-        println!("{}", lading);
-        if randrange_x > 300.0 {
-            a_drone.x_axis += rng.random_range(0.1..300.0);
-        } else if randrange_x > 0.1 {
-            a_drone.x_axis += rng.random_range(0.1..randrange_x);
+        if all_drone == true {
+            break 'outer;
         }
-        if randrange_y > 300.0 {
-            a_drone.y_axis += rng.random_range(0.1..300.0);
-        } else if randrange_y > 0.1 {
-            a_drone.y_axis += rng.random_range(0.1..randrange_y);
-        }
-        a_drone.battery -= a_drone.role.rolebatgo() + a_drone.payload.battery_multiplier();
-        if a_drone.battery == 50.0 {
-            println!("Drone battery has halfway drained!");
-        } else if a_drone.battery == 25.0 {
-            println!("25 procent remaining please recharge or hit target!")
-        } else if a_drone.battery == 0.0 {
-            println!("Drone battery has died");
-            break;
-        }
+
         thread::sleep(Duration::from_secs(1));
     }
 }
