@@ -33,6 +33,15 @@ enum Payload {
     SignalRelay,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+enum Weather {
+    Sunny,
+    Clear,
+    Rainy,
+    Freezing,
+    Thunder,
+}
+
 #[derive(Serialize, Deserialize)]
 enum Role {
     Scout,
@@ -47,6 +56,7 @@ struct DroneData {
     y_axis: f64,
     battery: f64,
     payload: Payload,
+    weather: Weather,
     completed: bool,
 }
 impl Role {
@@ -77,6 +87,18 @@ impl Payload {
 fn main() {
     let mut rng = rand::rng();
     println!("Integer: {}", rng.random_range(1..10));
+    let socket = UdpSocket::bind("0.0.0.0:0").expect("couldn't bind to address");
+    let weatherNum = rng.random_range(1..5);
+    let mut weather = Weather::Clear;
+
+    match weatherNum {
+        1 => weather = Weather::Clear,
+        2 => weather = Weather::Sunny,
+        3 => weather = Weather::Rainy,
+        4 => weather = Weather::Freezing,
+        5 => weather = Weather::Thunder,
+        _ => println!("Not Valid"),
+    }
     let target_x: f64 = 3422.523;
     let target_y: f64 = 3566.1;
 
@@ -88,6 +110,7 @@ fn main() {
             y_axis: 0.0,
             battery: 100.0,
             payload: Payload::HeShell,
+            weather: weather.clone(),
             completed: false,
         },
         DroneData {
@@ -97,6 +120,7 @@ fn main() {
             y_axis: 0.0,
             battery: 100.0,
             payload: Payload::SignalRelay,
+            weather: weather.clone(),
             completed: false,
         },
     ];
@@ -120,9 +144,16 @@ fn main() {
 
             if distance <= 0.12 {
                 println!("Drone: {} has reached target", drones.name);
+                let rt = "drone {} has reached the target";
+                socket
+                    .send_to(&rt.as_bytes(), "127.0.0.1:3232")
+                    .expect("couldn't send data");
                 drones.completed = true;
             }
             let lading = serde_json::to_string(&drones).unwrap();
+            socket
+                .send_to(&lading.as_bytes(), "127.0.0.1:3232")
+                .expect("couldn't send data");
             println!("{}", distance);
             println!("{}", lading);
             if randrange_x > 300.0 {
@@ -146,6 +177,13 @@ fn main() {
             }
         }
         if all_drone == true {
+            println!("All Drones have reached Target");
+            socket
+                .send_to(
+                    String::from("All drones have reached target").as_bytes(),
+                    "127.0.0.1:3232",
+                )
+                .expect("couldn't send data");
             break 'outer;
         }
 
