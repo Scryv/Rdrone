@@ -1,8 +1,48 @@
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::str;
 
+#[derive(Serialize, Deserialize, Debug)]
+enum Payload {
+    MedicalSupplies,
+    HeShell,
+    Grenade,
+    MilitarySupplies,
+    InfraRedCamera,
+    SignalRelay,
+}
+#[derive(Serialize, Deserialize, Clone, Debug)]
+enum Weather {
+    Sunny,
+    Clear,
+    Rainy,
+    Freezing,
+    Stormy,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+enum Role {
+    Scout,
+    Kamikaze,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct DroneData {
+    name: String,
+    role: Role,
+    x_axis: f64,
+    y_axis: f64,
+    battery: f64,
+    payload: Payload,
+    weather: Weather,
+    completed: bool,
+}
+
 fn main() {
     let socket = UdpSocket::bind("127.0.0.1:3232").unwrap();
+    let mut drones: HashMap<String, DroneData> = HashMap::new();
     println!("Waiting for input");
 
     let mut buf = [0; 2048];
@@ -10,6 +50,9 @@ fn main() {
         let (bts, src) = socket.recv_from(&mut buf).unwrap();
 
         let sbuf = &mut buf[..bts];
-        println!("{} AND {:?}", src, str::from_utf8(&sbuf));
+        let u: DroneData = serde_json::from_slice(sbuf).unwrap();
+        drones.insert(u.name.clone(), u);
+        println!("{:?}", drones);
+        // println!("{} AND {:?}", src, str::from_utf8(&sbuf));
     }
 }

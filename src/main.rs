@@ -1,5 +1,6 @@
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
+use std::net::UdpSocket;
 use std::thread;
 use std::time::Duration;
 
@@ -32,14 +33,13 @@ enum Payload {
     InfraRedCamera,
     SignalRelay,
 }
-
 #[derive(Serialize, Deserialize, Clone)]
 enum Weather {
     Sunny,
     Clear,
     Rainy,
     Freezing,
-    Thunder,
+    Stormy,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,6 +68,18 @@ impl Role {
     }
 }
 
+impl Weather {
+    fn weather_pen(&self) -> f64 {
+        match self {
+            Weather::Clear => 0.0,
+            Weather::Sunny => 0.05,
+            Weather::Rainy => 0.25,
+            Weather::Freezing => 0.4,
+            Weather::Stormy => 0.75,
+        }
+    }
+}
+
 impl Payload {
     fn weight(&self) -> f64 {
         match self {
@@ -88,7 +100,7 @@ fn main() {
     let mut rng = rand::rng();
     println!("Integer: {}", rng.random_range(1..10));
     let socket = UdpSocket::bind("0.0.0.0:0").expect("couldn't bind to address");
-    let weatherNum = rng.random_range(1..5);
+    let weatherNum = rng.random_range(1..=5);
     let mut weather = Weather::Clear;
 
     match weatherNum {
@@ -96,7 +108,7 @@ fn main() {
         2 => weather = Weather::Sunny,
         3 => weather = Weather::Rainy,
         4 => weather = Weather::Freezing,
-        5 => weather = Weather::Thunder,
+        5 => weather = Weather::Stormy,
         _ => println!("Not Valid"),
     }
     let target_x: f64 = 3422.523;
@@ -166,7 +178,10 @@ fn main() {
             } else if randrange_y > 0.1 {
                 drones.y_axis += rng.random_range(0.1..randrange_y);
             }
-            drones.battery -= drones.role.rolebatgo() + drones.payload.battery_multiplier();
+            drones.battery -= drones.role.rolebatgo()
+                + drones.payload.battery_multiplier()
+                + drones.weather.weather_pen();
+            println!("{}", drones.battery);
             if drones.battery == 50.0 {
                 println!("Drone battery has halfway drained!");
             } else if drones.battery == 25.0 {
