@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::str;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 enum Payload {
     MedicalSupplies,
     HeShell,
@@ -22,13 +22,13 @@ enum Weather {
     Stormy,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 enum Role {
     Scout,
     Kamikaze,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct DroneData {
     name: String,
     role: Role,
@@ -51,8 +51,10 @@ fn main() {
 
         let sbuf = &mut buf[..bts];
         let u: DroneData = serde_json::from_slice(sbuf).unwrap();
-        drones.insert(u.name.clone(), u);
-        println!("{:?}", drones);
-        // println!("{} AND {:?}", src, str::from_utf8(&sbuf));
+        drones.insert(u.name.clone(), u.clone());
+        println!(
+            "Name: {} | Role: {:?} | X:{:.3} Y:{:.3} | Batt: {:.1} |",
+            u.name, u.role, u.x_axis, u.y_axis, u.battery,
+        );
     }
 }
