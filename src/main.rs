@@ -58,6 +58,7 @@ struct DroneData {
     payload: Payload,
     weather: Weather,
     completed: bool,
+    destroyed: bool,
 }
 impl Role {
     fn rolebatgo(&self) -> f64 {
@@ -111,8 +112,8 @@ fn main() {
         5 => weather = Weather::Stormy,
         _ => println!("Not Valid"),
     }
-    let target_x: f64 = 3422.523;
-    let target_y: f64 = 3566.1;
+    let target_x: f64 = 2030.23;
+    let target_y: f64 = 1566.1;
 
     let mut dro: Vec<DroneData> = vec![
         DroneData {
@@ -124,6 +125,7 @@ fn main() {
             payload: Payload::HeShell,
             weather: weather.clone(),
             completed: false,
+            destroyed: false,
         },
         DroneData {
             name: String::from("drone_2"),
@@ -134,6 +136,7 @@ fn main() {
             payload: Payload::SignalRelay,
             weather: weather.clone(),
             completed: false,
+            destroyed: false,
         },
     ];
 
@@ -145,50 +148,48 @@ fn main() {
                 break;
             }
         }
-
         for drones in &mut dro {
-            let mut randrange_x = target_x - drones.x_axis;
-            let mut randrange_y = target_y - drones.y_axis;
+            if drones.destroyed == false {
+                let mut dx = target_x - drones.x_axis;
+                let mut dy = target_y - drones.y_axis;
 
-            let distance: f64 = ((drones.x_axis - target_x).powf(2.0)
-                + (drones.y_axis - target_y).powf(2.0))
-            .sqrt();
+                let distance: f64 = ((dx).powf(2.0) + (dy).powf(2.0)).sqrt();
 
-            if distance <= 0.12 {
-                println!("Drone: {} has reached target", drones.name);
-                let rt = "drone {} has reached the target";
+                if distance <= 1.0 {
+                    println!("Drone: {} has reached target", drones.name);
+                    let rt = "drone {} has reached the target";
+                    socket
+                        .send_to(&rt.as_bytes(), "127.0.0.1:3232")
+                        .expect("couldn't send data");
+                    drones.completed = true;
+                } else {
+                    let speed = 45.0;
+                    let ux = dx / distance;
+                    let uy = dy / distance;
+                    drones.x_axis += ux * speed;
+                    drones.y_axis += uy * speed;
+                }
+
+                let lading = serde_json::to_string(&drones).unwrap();
                 socket
-                    .send_to(&rt.as_bytes(), "127.0.0.1:3232")
+                    .send_to(&lading.as_bytes(), "127.0.0.1:3232")
                     .expect("couldn't send data");
-                drones.completed = true;
-            }
-            let lading = serde_json::to_string(&drones).unwrap();
-            socket
-                .send_to(&lading.as_bytes(), "127.0.0.1:3232")
-                .expect("couldn't send data");
-            println!("{}", distance);
-            println!("{}", lading);
-            if randrange_x > 300.0 {
-                drones.x_axis += rng.random_range(0.1..300.0);
-            } else if randrange_x > 0.1 {
-                drones.x_axis += rng.random_range(0.1..randrange_x);
-            }
-            if randrange_y > 300.0 {
-                drones.y_axis += rng.random_range(0.1..300.0);
-            } else if randrange_y > 0.1 {
-                drones.y_axis += rng.random_range(0.1..randrange_y);
-            }
-            drones.battery -= drones.role.rolebatgo()
-                + drones.payload.battery_multiplier()
-                + drones.weather.weather_pen();
-            println!("{}", drones.battery);
-            if drones.battery == 50.0 {
-                println!("Drone battery has halfway drained!");
-            } else if drones.battery == 25.0 {
-                println!("25 procent remaining please recharge or hit target!")
-            } else if drones.battery <= 0.0 {
-                println!("Drone battery has died");
-                break;
+                println!("{}", distance);
+                println!("{}", lading);
+
+                drones.battery -= drones.role.rolebatgo()
+                    + drones.payload.battery_multiplier()
+                    + drones.weather.weather_pen();
+                println!("{}", drones.battery);
+                if drones.battery < 50.0 && drones.battery > 47.0 {
+                    println!("Drone battery has halfway drained!");
+                } else if drones.battery < 25.0 && drones.battery > 22.0 {
+                    println!("25 procent remaining please recharge or hit target!")
+                } else if drones.battery <= 0.0 {
+                    println!("Drone battery has died");
+                    drones.destroyed = true;
+                    drones.completed = true;
+                }
             }
         }
         if all_drone == true {
