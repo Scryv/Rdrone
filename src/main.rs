@@ -155,6 +155,11 @@ fn main() {
 
                 let distance: f64 = ((dx).powf(2.0) + (dy).powf(2.0)).sqrt();
 
+                /*
+                  A start b end t persent between 0 and 1
+                  newX = x1 (x2-x1) * t
+                */
+
                 if distance <= 1.0 {
                     println!("Drone: {} has reached target", drones.name);
                     let rt = "drone {} has reached the target";
@@ -164,10 +169,6 @@ fn main() {
                     drones.completed = true;
                 } else {
                     let speed = 45.0;
-                    let ux = dx / distance;
-                    let uy = dy / distance;
-                    drones.x_axis += ux * speed;
-                    drones.y_axis += uy * speed;
                 }
 
                 let lading = serde_json::to_string(&drones).unwrap();
