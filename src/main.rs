@@ -155,10 +155,15 @@ fn main() {
 
                 let distance: f64 = ((dx).powf(2.0) + (dy).powf(2.0)).sqrt();
 
-                /*
-                  A start b end t persent between 0 and 1
-                  newX = x1 (x2-x1) * t
-                */
+                let speed = 45.0; 
+                let step = speed / distance;
+    
+                let t = step.min(1.0); 
+                 
+                println!("{}", t);
+                drones.x_axis += dx * t; 
+                drones.y_axis += dy * t;
+    
 
                 if distance <= 1.0 {
                     println!("Drone: {} has reached target", drones.name);
