@@ -1,12 +1,6 @@
 # Planning on adding
 - Obstacles
 - Collision detection
-- actual speed
 - Map
-- weather
-- weight to speed ratio
-- diff models
-- diff roles
 - base stations
 - failures
-- Communication
